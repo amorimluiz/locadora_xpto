@@ -1,0 +1,6 @@
+@locadora_xpto_HostAddress = http://localhost:5017
+
+GET {{locadora_xpto_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
