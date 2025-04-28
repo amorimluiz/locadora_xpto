@@ -2,14 +2,9 @@
 
 Este documento descreve todos os endpoints disponíveis na API **LocadoraXpto**, incluindo os parâmetros de query string, payloads de entrada e filtros avançados.
 
----
+## Diagrama de Entidade-Relacionamento
 
-## Base URL
-```
-https://localhost:5001/api
-```
-
----
+![Diagrama ER](assets/er-diagrama.png)
 
 ## 1. Fabricantes
 
