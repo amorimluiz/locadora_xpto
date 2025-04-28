@@ -5,64 +5,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using LocadoraXpto.Data;
 using LocadoraXpto.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LocadoraXpto.Controllers
 {
-    // DTOs para entrada
-    public class CreateAluguelDto
-    {
-        [Required]
-        public int ClienteId { get; set; }
-
-        [Required]
-        public int VeiculoId { get; set; }
-
-        [Required]
-        public DateTime DataInicio { get; set; }
-
-        [Required]
-        public DateTime DataFim { get; set; }
-
-        [Required]
-        public int QuilometragemInicial { get; set; }
-
-        [Required, Range(0, double.MaxValue)]
-        public decimal ValorDiaria { get; set; }
-    }
-
-    public class UpdateAluguelDto
-    {
-        [Required]
-        public int AluguelId { get; set; }
-
-        [Required]
-        public int ClienteId { get; set; }
-
-        [Required]
-        public int VeiculoId { get; set; }
-
-        [Required]
-        public DateTime DataInicio { get; set; }
-
-        [Required]
-        public DateTime DataFim { get; set; }
-
-        public DateTime? DataDevolucao { get; set; }
-
-        [Required]
-        public int QuilometragemInicial { get; set; }
-
-        public int? QuilometragemFinal { get; set; }
-
-        [Required, Range(0, double.MaxValue)]
-        public decimal ValorDiaria { get; set; }
-
-        [Range(0, double.MaxValue)]
-        public decimal ValorTotal { get; set; }
-    }
-
+    /// <summary>
+    /// Controller para gerenciar aluguéis.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AlugueisController : ControllerBase
@@ -70,8 +21,11 @@ namespace LocadoraXpto.Controllers
         private readonly LocadoraContext _context;
         public AlugueisController(LocadoraContext context) => _context = context;
 
-        // GET: api/alugueis?clienteId=1&ativo=true&valorMin=500
+        /// <summary>
+        /// Lista aluguéis com filtros opcionais (cliente, ativo, valor mínimo).
+        /// </summary>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<Aluguel>>> Get(
             [FromQuery] int? clienteId,
             [FromQuery] bool? ativo,
@@ -89,11 +43,15 @@ namespace LocadoraXpto.Controllers
             if (valorMin.HasValue)
                 query = query.Where(a => a.ValorTotal >= valorMin.Value);
 
-            return await query.ToListAsync();
+            return Ok(await query.ToListAsync());
         }
 
-        // GET: api/alugueis/5
+        /// <summary>
+        /// Obtém um aluguel pelo ID.
+        /// </summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Aluguel>> Get(int id)
         {
             var a = await _context.Alugueis
@@ -101,15 +59,18 @@ namespace LocadoraXpto.Controllers
                                    .Include(a => a.Veiculo)
                                    .FirstOrDefaultAsync(a => a.AluguelId == id);
             if (a == null) return NotFound();
-            return a;
+            return Ok(a);
         }
 
-        // POST: api/alugueis
+        /// <summary>
+        /// Cria um novo aluguel.
+        /// </summary>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Aluguel>> Post([FromBody] CreateAluguelDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var aluguel = new Aluguel
             {
@@ -123,21 +84,24 @@ namespace LocadoraXpto.Controllers
 
             _context.Alugueis.Add(aluguel);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(Get), new { id = aluguel.AluguelId }, aluguel);
         }
 
-        // PUT: api/alugueis/5
+        /// <summary>
+        /// Atualiza um aluguel existente.
+        /// </summary>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Put(int id, [FromBody] UpdateAluguelDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-            if (id != dto.AluguelId)
-                return BadRequest();
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (id != dto.AluguelId) return BadRequest();
 
             var aluguel = await _context.Alugueis.FindAsync(id);
-            if (aluguel == null)
-                return NotFound();
+            if (aluguel == null) return NotFound();
 
             aluguel.ClienteId = dto.ClienteId;
             aluguel.VeiculoId = dto.VeiculoId;
@@ -153,17 +117,55 @@ namespace LocadoraXpto.Controllers
             return NoContent();
         }
 
-        // DELETE: api/alugueis/5
+        /// <summary>
+        /// Remove um aluguel.
+        /// </summary>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
             var a = await _context.Alugueis.FindAsync(id);
-            if (a == null)
-                return NotFound();
+            if (a == null) return NotFound();
 
             _context.Alugueis.Remove(a);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        // DTOs de entrada
+        public class CreateAluguelDto
+        {
+            [Required]
+            public int ClienteId { get; set; }
+
+            [Required]
+            public int VeiculoId { get; set; }
+
+            [Required]
+            public System.DateTime DataInicio { get; set; }
+
+            [Required]
+            public System.DateTime DataFim { get; set; }
+
+            [Required]
+            public int QuilometragemInicial { get; set; }
+
+            [Required, Range(0, double.MaxValue)]
+            public decimal ValorDiaria { get; set; }
+        }
+
+        public class UpdateAluguelDto : CreateAluguelDto
+        {
+            [Required]
+            public int AluguelId { get; set; }
+
+            public int? QuilometragemFinal { get; set; }
+
+            public System.DateTime? DataDevolucao { get; set; }
+
+            [Range(0, double.MaxValue)]
+            public decimal ValorTotal { get; set; }
         }
     }
 }
